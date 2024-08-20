@@ -1,1 +1,11 @@
+
+#dev environment specific ignores
+
 /node_modules
+dist/
+
+#sensitive info specific ignores
+
+/credentials.json
+/token.json
+/.env

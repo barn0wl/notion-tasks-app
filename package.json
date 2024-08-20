@@ -4,16 +4,19 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npx tsc",
+    "test": "node dist/index.js"
   },
   "author": "barn0wl",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google-cloud/local-auth": "^2.1.0",
     "@notionhq/client": "^2.2.15",
     "body-parser": "^1.20.2",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "googleapis": "^105.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
