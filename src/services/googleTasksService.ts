@@ -15,7 +15,7 @@ export async function getTaskLists(auth: OAuth2Client): Promise<TaskList[]|undef
     }
   }
 
-export async function getTasksFromList(listId: string, auth: OAuth2Client): Promise<Task[]|undefined> {
+export async function getTasksFromList(auth: OAuth2Client, listId: string): Promise<Task[]|undefined> {
     const service = google.tasks({ version: 'v1', auth });
     const res = await service.tasks.list(
         {

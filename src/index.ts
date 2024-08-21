@@ -4,7 +4,8 @@ import dotenv from 'dotenv';
 import { Client } from '@notionhq/client';
 import { authorize } from './googleAuth.js';
 import { getTaskLists, getTasksFromList } from './services/googleTasksService.js';
-import { postTaskToNotion } from './services/notionService.js';
+import { getNotionListPageById, postListToNotion, postTaskToNotion } from './services/notionService.js';
+import cron from 'node-cron'
 
 dotenv.config();
 const app = express();
@@ -18,7 +19,8 @@ app.use(bodyParser.json());
 export const notion = new Client({
   auth: process.env.NOTION_API_KEY,
 })
-export const databaseId : string = process.env.DATABASE_ID || ""
+export const tasksDatabaseId : string = process.env.TASKS_DATABASE_ID || ""
+export const projectsDatabaseId : string = process.env.PROJECTS_DATABASE_ID || ""
 
 //start the server
 
@@ -29,18 +31,39 @@ app.listen(PORT, () => {
 
 export const client = await authorize()
 
-const myTaskList = await getTaskLists(client)
+//main operation logic
 
-if (myTaskList) {
-  myTaskList.forEach(
-    async (taskList) => {
-      const myTasks = await getTasksFromList(taskList.id, client)
+const runCycle = async () => {
+  const myTaskLists = await getTaskLists(client)
 
-      if (myTasks) {
-        myTasks.forEach(
-          (task) => postTaskToNotion(task)
-        )
+  if (myTaskLists) {
+    myTaskLists.forEach(
+      async (taskList) => {
+        await postListToNotion(taskList)
+        const myTasks = await getTasksFromList(client, taskList.id)
+        const listPageResponse = await getNotionListPageById(taskList.id)
+
+        if (myTasks && listPageResponse && listPageResponse.length>0) {
+          const myListPage = listPageResponse[0]
+          myTasks.forEach(
+            (task) => postTaskToNotion(task, myListPage)
+          )
+        } else {
+          console.log('Couldnt fetch tasks or list page doesnt exist')
+        }
       }
-    }
-  )
+    )
+  }
 }
+
+//Run cycle every 14 minutes
+cron.schedule('*/14 * * * *', async () => {
+  try {
+      await runCycle();
+      console.log('Done syncing tasks!');
+  } catch (error) {
+      console.error('Error during sync:', error);
+  }
+})
+
+console.log('Cron job scheduled to run every 14 minutes.')

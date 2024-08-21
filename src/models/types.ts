@@ -3,7 +3,6 @@ export interface Task {
     id: string,
     title: string,
     selfLink?: string,
-    parent?: string,
     status: string,
     due?: string,
     completed?: string,

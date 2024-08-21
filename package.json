@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "npx tsc",
-    "test": "node dist/index.js"
+    "test": "node dist/index.js",
+    "start": "node dist/index.js"
   },
   "author": "barn0wl",
   "license": "ISC",
@@ -16,10 +17,12 @@
     "body-parser": "^1.20.2",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "googleapis": "^105.0.0"
+    "googleapis": "^105.0.0",
+    "node-cron": "^3.0.3"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
+    "@types/node-cron": "^3.0.11",
     "typescript": "^5.5.4"
   }
 }
