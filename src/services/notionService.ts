@@ -56,24 +56,29 @@ export const postTaskToNotion = async (task: Task) => {
 
     const pageResponse = await getNotionTaskPageById(task.id)
 
-    if (pageResponse) {
+    if (pageResponse && pageResponse.length > 0) {
+        console.log('Task is already in db')
         page = pageResponse[0]
-        await updateNotionTaskPage(page.id, task)
-    }
 
-    page = parseTaskToNotionPage(task)
+        if (page.id) updateNotionTaskPage(page.id, task)
+            .then(() => console.log('task has been updated in db'))
+            .catch((error) => console.log('Error updating task:', error))
+    } else {
+        console.log('Task isnt already in db')
+        page = parseTaskToNotionPage(task)
 
-    try {
-        const response = await notion.pages.create({
-            parent: {
-                type: 'database_id',
-                database_id: databaseId,
-            },
-            properties: page.properties
-        })
-        console.log(response)
-    }catch(error) {
-        console.log("Error adding task to Notion:", error)
+        try {
+            const response = await notion.pages.create({
+                parent: {
+                    type: 'database_id',
+                    database_id: databaseId,
+                },
+                properties: page.properties
+            })
+            console.log("Task added to Notion:", response)
+        } catch(error) {
+            console.log("Error adding task to Notion:", error)
+        }
     }
 }
 
@@ -123,4 +128,16 @@ export const getNotionTaskPageById = async (taskId : string) => {
     } catch (error) {
         console.log("Error querying tasks database:", error)
     }
+}
+
+export const postTaskListToNotion = async (taskList: Task[]) => {
+    taskList.forEach(
+        (task) => {
+            try {
+                postTaskToNotion(task)
+            } catch {
+                console.error()
+            }
+        }
+    )
 }
