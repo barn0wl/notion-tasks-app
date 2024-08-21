@@ -5,7 +5,6 @@ import { Client } from '@notionhq/client';
 import { authorize } from './googleAuth.js';
 import { getTaskLists, getTasksFromList } from './services/googleTasksService.js';
 import { getNotionListPageById, postListToNotion, postTaskToNotion } from './services/notionService.js';
-import cron from 'node-cron'
 
 dotenv.config();
 const app = express();
@@ -56,14 +55,9 @@ const runCycle = async () => {
   }
 }
 
-//Run cycle every 14 minutes
-cron.schedule('*/14 * * * *', async () => {
-  try {
-      await runCycle();
-      console.log('Done syncing tasks!');
-  } catch (error) {
-      console.error('Error during sync:', error);
-  }
+//Run cycle on GET requests at origin route
+app.get('/', (req, res) => {
+  runCycle()
+  .then( () => res.send('Done syncing tasks!').status(200))
+  .catch( (error) => res.send(`Error while syncing tasks: ${error}`).status(400))
 })
-
-console.log('Cron job scheduled to run every 14 minutes.')
