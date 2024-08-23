@@ -1,4 +1,4 @@
-import { IPageObject } from "../models/notionTypes.js";
+import { IPageObject} from "../models/notionTypes.js";
 import { Task, TaskList } from "../models/types.js";
 import { notion, projectsDatabaseId, tasksDatabaseId } from "../index.js";
 
@@ -85,6 +85,7 @@ export function parseTaskToNotionPage(task: Task, notionListPageId: string) : IP
         }
     }
 }
+
 export const postListToNotion = async (list: TaskList) => {
 
     let page: IPageObject
@@ -92,27 +93,27 @@ export const postListToNotion = async (list: TaskList) => {
     const pageResponse = await getNotionListPageById(list.id)
 
     if (pageResponse && pageResponse.length > 0) {
-        console.log('List is already in db')
+        console.log('List', list.title ,'is already in db')
         page = pageResponse[0]
 
         if (page.id) updateNotionListPage(page.id, list)
-            .then(() => console.log('list has been updated in db'))
-            .catch((error) => console.log('Error updating list:', error))
+            .then(() => console.log('list', list.title ,'has been updated in db'))
+            .catch((error) => console.log('Error updating list:', list.title, error))
     } else {
-        console.log('List isnt already in db')
+        console.log('List', list.title ,'isnt already in db')
         page = parseListToNotionPage(list)
 
         try {
-            const response = await notion.pages.create({
+            await notion.pages.create({
                 parent: {
                     type: 'database_id',
                     database_id: projectsDatabaseId,
                 },
                 properties: page.properties
             })
-            console.log("List added to Notion:", response)
+            console.log("List ", list.title , "added to Notion")
         } catch(error) {
-            console.log("Error adding list to Notion:", error)
+            console.log("Error adding list", list.title, "to Notion:", error)
         }
     }
 }
@@ -125,30 +126,30 @@ export const postTaskToNotion = async (task: Task, listPage: IPageObject) => {
     const pageResponse = await getNotionTaskPageById(task.id)
 
     if (pageResponse && pageResponse.length > 0) {
-        console.log('Task is already in db')
+        console.log('Task', task.title, 'is already in db')
         page = pageResponse[0]
 
         if (page.id && listPageId) updateNotionTaskPage(page.id, task, listPageId)
-            .then(() => console.log('task has been updated in db'))
-            .catch((error) => console.log('Error updating task:', error))
+            .then(() => console.log('Task', task.title, 'has been updated in db'))
+            .catch((error) => console.log('Error updating task:', task.title, error))
 
     } else {
-        console.log('Task isnt already in db')
+        console.log('Task', task.title, 'isnt already in db')
 
         if (listPageId) {
                 page = parseTaskToNotionPage(task, listPageId)
 
             try {
-                const response = await notion.pages.create({
+                await notion.pages.create({
                     parent: {
                         type: 'database_id',
                         database_id: tasksDatabaseId,
                     },
                     properties: page.properties
                 })
-                console.log("Task added to Notion:", response)
+                console.log("Task", task.title, "added to Notion")
             } catch(error) {
-                console.log("Error adding task to Notion:", error)
+                console.log('Error adding task to Notion:', error)
             }
         }
     }
@@ -156,7 +157,7 @@ export const postTaskToNotion = async (task: Task, listPage: IPageObject) => {
 
 export const updateNotionListPage = async (listId: string, list: TaskList) => {
     try {
-        const response = await notion.pages.update({
+        await notion.pages.update({
             page_id: listId,
             properties: {
                 Name: {
@@ -166,7 +167,6 @@ export const updateNotionListPage = async (listId: string, list: TaskList) => {
               }
             },
           })
-          console.log(response)
     } catch (error) {
         console.log("Error updating Notion project:", error)
     }
@@ -174,7 +174,7 @@ export const updateNotionListPage = async (listId: string, list: TaskList) => {
 
 export const updateNotionTaskPage = async (pageId: string, task: Task, notionListPageId: string) => {
     try {
-        const response = await notion.pages.update({
+        await notion.pages.update({
             page_id: pageId,
             properties: {
                 Name: {
@@ -202,7 +202,6 @@ export const updateNotionTaskPage = async (pageId: string, task: Task, notionLis
                 }
             },
           })
-          console.log(response)
     } catch (error) {
         console.log("Error updating Notion task:", error)
     }
@@ -213,10 +212,20 @@ export const getNotionListPageById = async (listId: string) => {
         const response = await notion.databases.query({
             database_id: projectsDatabaseId,
             filter: {
-                  property: 'GTaskID',
-                  rich_text: {
-                    equals: listId,
-                  },
+                and: [
+                        {
+                            property: 'GTaskID',
+                            rich_text: {
+                                equals: listId,
+                            },
+                        },
+                        {
+                            property: 'Archive',
+                            checkbox: {
+                                equals: false
+                            }
+                        } 
+                    ]
                 }
           })
         return response.results as IPageObject[]
@@ -230,10 +239,20 @@ export const getNotionTaskPageById = async (taskId : string) => {
         const response = await notion.databases.query({
             database_id: tasksDatabaseId,
             filter: {
-                  property: 'GTaskID',
-                  rich_text: {
-                    equals: taskId,
-                  },
+                and: [
+                        {
+                            property: 'GTaskID',
+                            rich_text: {
+                                equals: taskId,
+                            },
+                        },
+                        {
+                            property: 'Archive',
+                            checkbox: {
+                                equals: false
+                            }
+                        } 
+                    ]
                 }
           })
         return response.results as IPageObject[]
@@ -244,12 +263,107 @@ export const getNotionTaskPageById = async (taskId : string) => {
 
 export const postTaskListToNotion = async (taskList: Task[], listPage: IPageObject) => {
     taskList.forEach(
-        (task) => {
+        async (task) => {
             try {
-                postTaskToNotion(task, listPage)
+                await postTaskToNotion(task, listPage)
             } catch {
                 console.error()
             }
         }
     )
+}
+
+export const archiveTaskPage = async (pageId: string) => {
+    try {
+        await notion.pages.update({
+            page_id: pageId,
+            properties: {
+                Archive: {
+                    checkbox: true 
+                }
+            }
+        })
+    } catch(err) {
+        console.log('Error while archiving task:', err)
+    }
+}
+
+export const archiveProjectPage = async (pageId: string) => {
+    try {
+        await notion.pages.update({
+            page_id: pageId,
+            properties: {
+                Archive: {
+                    checkbox: true 
+                }
+            }
+        })
+    } catch(err) {
+        console.log('Error while archiving project:', err)
+    }
+}
+
+export const getListPages = async () => {
+    try {
+        const response = await notion.databases.query({
+            database_id: projectsDatabaseId,
+            filter: {
+                and: [
+                        {
+                        property: 'GTaskID',
+                        rich_text: {
+                            is_not_empty: true,
+                            }
+                        },
+                        {
+                            property: 'Archive',
+                            checkbox: {
+                                equals: false
+                            }
+                        } 
+                    ]
+                }
+        })
+        return response.results as IPageObject[]
+    } catch (error) {
+        console.log("Error querying projects database:", error)
+    }
+}
+
+export const getTaskPages = async () => {
+    try {
+        const response = await notion.databases.query({
+            database_id: tasksDatabaseId,
+            filter: {
+                and: [
+                        {
+                        property: 'GTaskID',
+                        rich_text: {
+                            is_not_empty: true,
+                            }
+                        },
+                        {
+                            property: 'Archive',
+                            checkbox: {
+                                equals: false
+                            }
+                        } 
+                    ]
+                }
+        })
+        return response.results as IPageObject[]
+    } catch (error) {
+        console.log("Error querying tasks database:", error)
+    }
+}
+
+export const getNotionPage = async (pageId: string) => {
+    try {
+        const response = await notion.pages.retrieve({
+            page_id: pageId
+        })
+        return response as IPageObject
+    } catch(err) {
+        console.log("Error querying page:", err)
+    }
 }

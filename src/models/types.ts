@@ -5,8 +5,7 @@ export interface Task {
     selfLink?: string,
     status: string,
     due?: string,
-    completed?: string,
-    deleted: boolean
+    completed?: string
 }
 
 export interface TaskList {

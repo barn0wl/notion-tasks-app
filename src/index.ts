@@ -1,10 +1,10 @@
+//Imports
 import express from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import { Client } from '@notionhq/client';
 import { authorize } from './googleAuth.js';
-import { getTaskLists, getTasksFromList } from './services/googleTasksService.js';
-import { getNotionListPageById, postListToNotion, postTaskToNotion } from './services/notionService.js';
+import { runCycle } from './services/mainService.js';
 
 dotenv.config();
 const app = express();
@@ -30,33 +30,8 @@ app.listen(PORT, () => {
 
 export const client = await authorize()
 
-//main operation logic
-
-const runCycle = async () => {
-  const myTaskLists = await getTaskLists(client)
-
-  if (myTaskLists) {
-    myTaskLists.forEach(
-      async (taskList) => {
-        await postListToNotion(taskList)
-        const myTasks = await getTasksFromList(client, taskList.id)
-        const listPageResponse = await getNotionListPageById(taskList.id)
-
-        if (myTasks && listPageResponse && listPageResponse.length>0) {
-          const myListPage = listPageResponse[0]
-          myTasks.forEach(
-            (task) => postTaskToNotion(task, myListPage)
-          )
-        } else {
-          console.log('Couldnt fetch tasks or list page doesnt exist')
-        }
-      }
-    )
-  }
-}
-
 //Run cycle on GET requests at origin route
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   runCycle()
   .then( () => res.send('Done syncing tasks!').status(200))
   .catch( (error) => res.send(`Error while syncing tasks: ${error}`).status(400))
