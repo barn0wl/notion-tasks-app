@@ -1,90 +1,7 @@
 import { IPageObject} from "../models/notionTypes.js";
 import { Task, TaskList } from "../models/types.js";
 import { notion, projectsDatabaseId, tasksDatabaseId } from "../index.js";
-
-export function parseListToNotionPage(list: TaskList) : IPageObject {
-    return {
-        properties: {
-            Name: {
-                type: "title",
-                title: [
-                    {
-                        type: "text",
-                        text: {
-                            content: list.title
-                        }
-                    }
-                ]
-            },
-            "List URL": {
-                type: "url",
-                url: list.selfLink?? ""
-            },
-            GTaskID : {
-                "rich_text" : [{
-                    type: "text",
-                    text: {
-                        content: list.id
-                    }
-                }]
-
-            }
-        }
-    }
-}
-
-export function parseTaskToNotionPage(task: Task, notionListPageId: string) : IPageObject {
-    return {
-        properties: {
-            Name: {
-                type: "title",
-                title: [
-                    {
-                        type: "text",
-                        text: {
-                            content: task.title
-                        }
-                    }
-                ]
-            },
-            Due: {
-                type: "date",
-                date: task.due? {
-                    start: task.due,
-                    } : null
-            },
-            Completed : {
-                type: "date",
-                date: task.completed? {
-                    start: task.completed,
-                    } : null
-            },
-            Done: {
-                type: "checkbox",
-                checkbox: task.status === 'completed'? true : false,
-              },
-            "Task URL": {
-                type: "url",
-                url: task.selfLink?? ""
-            },
-            Project : {
-                type: "relation",
-                relation: [{
-                    id: notionListPageId
-                }]
-            },
-            GTaskID : {
-                "rich_text" : [{
-                    type: "text",
-                    text: {
-                        content: task.id
-                    }
-                }]
-
-            }
-        }
-    }
-}
+import { parseListToNotionPage, parseTaskToNotionPage } from "../helpers/notionHelpers.js";
 
 export const postListToNotion = async (list: TaskList) => {
 
@@ -111,7 +28,7 @@ export const postListToNotion = async (list: TaskList) => {
                 },
                 properties: page.properties
             })
-            console.log("List ", list.title , "added to Notion")
+            console.log("List", list.title , "added to Notion")
         } catch(error) {
             console.log("Error adding list", list.title, "to Notion:", error)
         }
@@ -262,15 +179,21 @@ export const getNotionTaskPageById = async (taskId : string) => {
 }
 
 export const postTaskListToNotion = async (taskList: Task[], listPage: IPageObject) => {
-    taskList.forEach(
-        async (task) => {
-            try {
-                await postTaskToNotion(task, listPage)
-            } catch {
-                console.error()
-            }
-        }
-    )
+    try {
+        await Promise.all(
+            taskList.map(
+                async (task) => {
+                    try {
+                        await postTaskToNotion(task, listPage)
+                    } catch {
+                        console.error()
+                    }
+                }
+            )
+        )
+    } catch (error) {
+        console.error('Error occured while posting tasks to Notion:', error)
+    }
 }
 
 export const archiveTaskPage = async (pageId: string) => {

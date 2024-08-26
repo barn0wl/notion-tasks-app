@@ -3,8 +3,8 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import { Client } from '@notionhq/client';
-import { authorize } from './googleAuth.js';
-import { runCycle } from './services/mainService.js';
+import { authorize } from './services/authService.js';
+import { runCycle } from './services/syncService.js';
 
 dotenv.config();
 const app = express();
