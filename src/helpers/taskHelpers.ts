@@ -25,19 +25,24 @@ export const shouldDeleteTaskPage = async (taskPage: IPageObject) : Promise<bool
         const listIDProp = projectPage.properties.GTaskID as TextProperty
         const listID = listIDProp.rich_text[0].text.content
         const list = await getTaskListById(client, listID)
-        const tasks = await getTasksFromList(client, list)
 
-        if (tasks) {
-            const foundTask = tasks.filter( (task) => taskID === task.id)
-            if (foundTask.length>0) {
-                console.log('Task', name, 'exists in the google db still')
-                return false
+        if (list) {
+            const tasks = await getTasksFromList(client, list)
+            if (tasks) {
+                const foundTask = tasks.filter( (task) => taskID === task.id)
+                if (foundTask.length>0) {
+                    console.log('Task', name, 'exists in the google db still')
+                    return false
+                } else {
+                    console.log('Task', name, 'isnt in the google db anymore')
+                    return true
+                }
             } else {
-                console.log('Task', name, 'isnt in the google db anymore')
+                console.log('The related list for task', name, 'is empty')
                 return true
             }
         } else {
-            console.log('The related list for task', name, 'is empty')
+            console.log('The list for task', name, 'isnt in the Google db anymore')
             return true
         }
     } else {

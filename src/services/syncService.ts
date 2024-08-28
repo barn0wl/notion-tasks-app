@@ -52,7 +52,7 @@ export const postAllTasksToNotion = async (myTaskLists : TaskList[]) => {
 }
 
 export const runArchive = async (myTaskLists: TaskList[]) => {
-
+    console.log('Archiving Notion pages...')
     const myProjectsPages = await getListPages()
     const myTaskPages = await getTaskPages()
     

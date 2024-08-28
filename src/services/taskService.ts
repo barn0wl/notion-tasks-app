@@ -29,11 +29,12 @@ export async function getTasksFromList(auth: OAuth2Client, list: TaskList): Prom
         console.log('List of tasks for ', list.title, ' found')
         return taskList as Task[]
       } else {
-        console.log('No tasks found inside list', list.title);
+        console.log('No tasks found inside list', list.title)
       }
   }
 
 export async function getTaskListById(auth: OAuth2Client, listId: string) {
+  try {
     const service = google.tasks({ version: 'v1', auth });
     const res = await service.tasklists.get(
       {
@@ -42,4 +43,7 @@ export async function getTaskListById(auth: OAuth2Client, listId: string) {
     )
     const list = res.data
     return list as TaskList
+  } catch (error) {
+    console.log('Couldnt find list that you queried for')
+  }
 }
