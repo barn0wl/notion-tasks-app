@@ -1,9 +1,58 @@
-import { client } from "../index.js"
-import { TaskList } from "../models/types.js"
-import { getTaskLists, getTasksFromList } from "./taskService.js"
-import { postListToNotion, getNotionListPageById, postTaskToNotion, getListPages, archiveProjectPage, getTaskPages, archiveTaskPage } from "./notionService.js"
-import { shouldDeleteListPage, taskPageFilter, shouldDeleteTaskPage } from "../helpers/taskHelpers.js"
+//Model imports
+import { SyncState, Task, TaskList } from "../models/types.js"
 
+//Services
+import { authorize } from '../services/authService.js';
+import { getListPages, getTaskPages } from "../services/notionService.js";
+import { getTaskLists } from "../services/taskService.js";
+
+//Helpers
+import { parseNotionData, parseNotionState } from "../helpers/notionHelpers.js";
+
+
+const googleTasksClient = await authorize()
+
+const notionState: SyncState = {
+    tasklists: [],
+    tasks: []
+}
+
+const googleTasksState: SyncState = {
+    tasklists: [],
+    tasks: []
+}
+
+const syncState: SyncState = {
+    tasklists: [],
+    tasks: []
+}
+
+async function getNotionState(): Promise<SyncState | undefined> {
+
+    const myProjectsPages = await getListPages()
+    const myTaskPages = await getTaskPages()
+    if (myProjectsPages && myTaskPages) {
+        const notionData = parseNotionData(myProjectsPages, myTaskPages)
+        const notionState = parseNotionState(notionData)
+        return notionState
+    } else {
+        console.log("Couldn't fetch Notion state")
+    }
+}
+
+async function getGoogleTasksState() {
+
+    const myTaskLists = await getTaskLists(googleTasksClient)
+    const myTasks : Task[]
+    if (myTaskLists) {
+        myTaskLists.forEach( taskList => {
+            const listId = taskList.id
+            const tasks = await ()
+        })
+        //we're about to use await inside an array method. Do the thing!
+    }
+    
+}
 
 //Main operation logic
 export const runCycle = async () => {

@@ -4,12 +4,16 @@ import { Task, TaskList } from '../models/types.js';
 
 // Lists the user's task lists
 export async function getTaskLists(auth: OAuth2Client): Promise<TaskList[]|undefined> {
+
     const service = google.tasks({ version: 'v1', auth });
     const res = await service.tasklists.list();
     const taskLists = res.data.items;
+
     if (taskLists && taskLists.length) {
+      
       console.log('Task lists found')
       return taskLists as TaskList[]
+
     } else {
       console.log('No task lists found.');
     }
@@ -26,24 +30,27 @@ export async function getTasksFromList(auth: OAuth2Client, list: TaskList): Prom
     )
     const taskList = res.data.items
     if (taskList && taskList.length) {
+        const formattedTaskList = taskList as Task[]
+        formattedTaskList.forEach( task => task.taskListId = listId)
         console.log('List of tasks for ', list.title, ' found')
-        return taskList as Task[]
+        return formattedTaskList
       } else {
         console.log('No tasks found inside list', list.title)
       }
   }
 
 export async function getTaskListById(auth: OAuth2Client, listId: string) {
-  try {
-    const service = google.tasks({ version: 'v1', auth });
-    const res = await service.tasklists.get(
-      {
-        tasklist : listId
-      }
-    )
-    const list = res.data
-    return list as TaskList
-  } catch (error) {
-    console.log('Couldnt find list that you queried for')
+//we could get rid of this by using a google Tasks state store
+    try {
+      const service = google.tasks({ version: 'v1', auth });
+      const res = await service.tasklists.get(
+        {
+          tasklist : listId
+        }
+      )
+      const list = res.data
+      return list as TaskList
+    } catch (error) {
+      console.log('Couldnt find list that you queried for')
+    }
   }
-}

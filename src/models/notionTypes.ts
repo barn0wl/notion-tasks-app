@@ -1,3 +1,5 @@
+import { Task, TaskList } from "./types.js"
+
 export interface IPageObject {
     id?: string,
     properties: PageObjectProperties
@@ -49,5 +51,17 @@ export interface TextProperty {
         text: {
             content: string
         }
+    }[]
+}
+
+export interface NotionData {
+    tasks: {
+        pageId: string,
+        task: Task,
+        projectPageId: string
+    }[],
+    projects: {
+        pageId: string,
+        list: TaskList,
     }[]
 }
