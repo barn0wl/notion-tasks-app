@@ -1,18 +1,22 @@
 import { Client } from '@notionhq/client';
+import dotenv from 'dotenv';
 import { IPageObject} from "../models/notionTypes.js";
 import { Task } from "../models/types.js";
+
+dotenv.config();
 
 // Initialize Notion client with your API key
 export const notion = new Client({
     auth: process.env.NOTION_API_KEY,
   })
+
 const tasksDatabaseId : string = process.env.TASKS_DATABASE_ID || ""
 const projectsDatabaseId : string = process.env.PROJECTS_DATABASE_ID || ""
 
 // POST methods
 export const addListPageToNotion = async (listPage: IPageObject) => {
     try {
-        await notion.pages.create({
+        const response = await notion.pages.create({
             parent: {
                 type: 'database_id',
                 database_id: projectsDatabaseId,
@@ -20,6 +24,7 @@ export const addListPageToNotion = async (listPage: IPageObject) => {
             properties: listPage.properties
         })
         console.log("List added to Notion")
+        return response.id
     } catch(error) {
         console.log("Error adding list to Notion:", error)
     }
@@ -27,7 +32,7 @@ export const addListPageToNotion = async (listPage: IPageObject) => {
 
 export const addTaskPageToNotion = async (taskPage: IPageObject) => {
     try {
-        await notion.pages.create({
+        const response = await notion.pages.create({
             parent: {
                 type: 'database_id',
                 database_id: tasksDatabaseId,
@@ -35,6 +40,7 @@ export const addTaskPageToNotion = async (taskPage: IPageObject) => {
             properties: taskPage.properties
         })
         console.log("Task added to Notion")
+        return response.id
     } catch(error) {
         console.log('Error adding task to Notion:', error)
     }

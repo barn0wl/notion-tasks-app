@@ -128,9 +128,11 @@ export function reconcileChanges (notionChanges: SyncStateChanges, googleTaskCha
     }
   })
 
-  notionChanges.tasks.added.forEach( newTask =>
+  notionChanges.tasks.added.forEach( newTask => {
+      //making sure we're not adding the exact same task
+    if (!googleTaskChanges.tasks.added.find( task => newTask.id === task.id))
     finalChanges.tasks.added.push(newTask)
-  )
+  })
 
   //Tasklists
   notionChanges.taskLists.updated.forEach( update => {
@@ -147,25 +149,54 @@ export function reconcileChanges (notionChanges: SyncStateChanges, googleTaskCha
     }
   })
   
-  notionChanges.taskLists.added.forEach( newTaskList =>
+  notionChanges.taskLists.added.forEach( newTaskList => {
+    if (!googleTaskChanges.taskLists.added.find( list => newTaskList.id === list.id))
     finalChanges.taskLists.added.push(newTaskList)
-  )
+  })
 
   return finalChanges
 }
 
+export function applyChangesToState (stateToUpdate: SyncState, changes: SyncStateChanges) {
+  //tasklists
+  changes.taskLists.added.forEach( addedList => stateToUpdate.tasklists.push(addedList))
+
+  changes.taskLists.updated.forEach( update => {
+    let foundList = stateToUpdate.tasklists.find( list => list.id === update.id)
+    if (foundList) foundList = update.newValue
+    else stateToUpdate.tasklists.push(update.newValue)
+  })
+
+  changes.taskLists.deleted.forEach ( idToDelete => {
+    stateToUpdate.tasklists = stateToUpdate.tasklists.filter( list => list.id !== idToDelete)
+  })
+
+  //tasks
+  changes.tasks.added.forEach( addedTask => stateToUpdate.tasks.push(addedTask))
+
+  changes.tasks.updated.forEach( update => {
+    let foundTask = stateToUpdate.tasks.find( task => task.id === update.id)
+    if (foundTask) foundTask = update.newValue
+    else stateToUpdate.tasks.push(update.newValue)
+  })
+
+  changes.tasks.deleted.forEach ( idToDelete => {
+    stateToUpdate.tasks = stateToUpdate.tasks.filter( task => task.id !== idToDelete)
+  })
+}
+
 function createTaskListMap(taskLists: TaskList[]): Map<string, TaskList> {
-    const map = new Map<string, TaskList>();
-    for (const taskList of taskLists) {
-      map.set(taskList.id, taskList);
-    }
-    return map;
+  const map = new Map<string, TaskList>();
+  for (const taskList of taskLists) {
+    map.set(taskList.id, taskList);
   }
+  return map;
+}
 
 function createTaskMap(tasks: Task[]): Map<string, Task> {
-    const map = new Map<string, Task>();
-    for (const task of tasks) {
-      map.set(task.id, task);
-    }
-    return map;
+  const map = new Map<string, Task>();
+  for (const task of tasks) {
+    map.set(task.id, task);
   }
+  return map;
+}

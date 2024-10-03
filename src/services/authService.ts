@@ -6,7 +6,7 @@ import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 
 // If modifying these scopes, delete token.json.
-const SCOPES = ['https://www.googleapis.com/auth/tasks.readonly'];
+const SCOPES = ['https://www.googleapis.com/auth/tasks'];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first time.
 const TOKEN_PATH = path.join(process.cwd(), 'token.json');

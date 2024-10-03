@@ -2,6 +2,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
+import { runCycle } from './core/app.js';
 
 dotenv.config();
 const app = express();

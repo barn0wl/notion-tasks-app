@@ -85,40 +85,6 @@ export function parseTaskToNotionPage(task: Task, notionListPageId: string) : IP
     }
 }
 
-export function shouldDeleteTaskPage(syncedState: SyncState, taskId: string) : boolean {
-    //this function returns a boolean that determines if a task page should be deleted or not
-    //it uses a SyncState parameter representing the current structure of data that is synced
-
-    const tasks = syncedState.tasks
-    const foundTask = tasks.find( task => task.id === taskId)
-    if (foundTask){
-        return false
-    } else {
-        return true
-    }
-}
-
-export function shouldDeleteListPage (syncedState: SyncState, taskListId: string) : boolean {
-    //this function checks if a specific list doesnt exist in the syncedState anymore and
-    //should be deleted in the Notion database
-
-    const taskLists = syncedState.tasklists
-    const foundList = taskLists.find( list => list.id === taskListId)
-    if (foundList) {
-        return false
-    } else {
-        return true
-    }
-}
-
-export function getListPageOfTask (notionState: NotionData, taskId: string) : string|undefined {
-    const taskObj = notionState.tasks.find( taskObj => taskObj.task.id === taskId)
-    if (taskObj) {
-        const projectPageId = taskObj.projectPageId
-        return projectPageId
-    }
-}
-
 export function parseNotionPageToList (page: IPageObject) : TaskList {
     const nameProp = page.properties.Name as TitleProperty
     const listIDProp = page.properties.GTaskID as TextProperty
@@ -186,7 +152,6 @@ export function parseNotionData (listPages: IPageObject[], taskPages: IPageObjec
             data.tasks.push(newTask)
         }
     })
-
     return data
 }
 
