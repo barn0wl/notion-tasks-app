@@ -1,4 +1,3 @@
-
 export interface Task {
     id: string,
     title: string,
@@ -25,17 +24,11 @@ export interface SyncStateChanges {
     tasks: {
       added: Task[]
       deleted: string[]
-      updated: {
-        id: string,
-        newValue: Task
-      }[]
+      updated: Task[]
     };
     taskLists: {
       added: TaskList[]
       deleted: string[]
-      updated: {
-        id: string,
-        newValue: TaskList
-      }[]
+      updated: TaskList[]
     };
   }

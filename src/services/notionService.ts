@@ -23,7 +23,7 @@ export const addListPageToNotion = async (listPage: IPageObject) => {
             },
             properties: listPage.properties
         })
-        console.log("List added to Notion")
+        console.log("Project page added. ID:", response.id)
         return response.id
     } catch(error) {
         console.log("Error adding list to Notion:", error)
@@ -39,7 +39,7 @@ export const addTaskPageToNotion = async (taskPage: IPageObject) => {
             },
             properties: taskPage.properties
         })
-        console.log("Task added to Notion")
+        console.log("Task page added. ID:", response.id)
         return response.id
     } catch(error) {
         console.log('Error adding task to Notion:', error)
@@ -58,7 +58,8 @@ export const updateNotionListPage = async (listPageId: string, newTitle: string)
                     }]
                 }
             },
-            })
+        })
+        console.log("Project page updated. ID:", listPageId)
     } catch (error) {
         console.log("Error updating Notion project:", error)
     }  
@@ -93,7 +94,8 @@ export const updateNotionTaskPage = async (taskPageId: string, updatedTask: Task
                     }]
                 }
             },
-            })
+        })
+        console.log("Task page updated. ID:", taskPageId)
     } catch (error) {
         console.log("Error updating Notion task:", error)
     }
@@ -109,6 +111,7 @@ export const archivePage = async (pageId: string) => {
                 }
             }
         })
+        console.log("Page archived. ID:", pageId)
     } catch(err) {
         console.log('Error while archiving task:', err)
     }

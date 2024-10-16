@@ -70,12 +70,12 @@ async function pushChangesToNotion (data: NotionData, changes: SyncStateChanges)
     )
 
     await Promise.all(
-        changes.taskLists.updated.map( async updatedListData => {
-            let projectData = data.projects.find(project => updatedListData.id === project.list.id)
+        changes.taskLists.updated.map( async updatedList => {
+            let projectData = data.projects.find(project => updatedList.id === project.list.id)
             if (projectData) {
                 try {
-                    await updateNotionListPage(projectData.pageId, updatedListData.newValue.title)
-                    projectData.list.title = updatedListData.newValue.title
+                    await updateNotionListPage(projectData.pageId, updatedList.title)
+                    projectData.list.title = updatedList.title
                 } catch (error) {
                     console.log("Error updating list page", error)
                 }
@@ -119,11 +119,11 @@ async function pushChangesToNotion (data: NotionData, changes: SyncStateChanges)
     await Promise.all(
         changes.tasks.updated.map( async update => {
             let taskData = data.tasks.find( tData => tData.task.id === update.id)
-            const projectData = data.projects.find(project => update.newValue.taskListId === project.list.id)
+            const projectData = data.projects.find(project => update.taskListId === project.list.id)
             if (taskData && projectData) {
                 try {
-                    await updateNotionTaskPage(taskData.pageId, update.newValue, projectData.pageId)
-                    taskData.task = update.newValue
+                    await updateNotionTaskPage(taskData.pageId, update, projectData.pageId)
+                    taskData.task = update
                     taskData.projectPageId = projectData.pageId
                 } catch (error) {
                     console.log("Error updating task page", error)
@@ -166,9 +166,9 @@ async function pushChangesToGoogleTasks (state: SyncState, changes: SyncStateCha
     await Promise.all(
         changes.taskLists.updated.map( async update => {
             try {
-                await patchTaskList(googleTasksClient, update.newValue)
+                await patchTaskList(googleTasksClient, update)
                 let list = state.tasklists.find( list => list.id === update.id)
-                if (list) list = update.newValue
+                if (list) list = update
             } catch (error) {
                 console.log("Error updating tasklist", error)
             } 
@@ -201,9 +201,9 @@ async function pushChangesToGoogleTasks (state: SyncState, changes: SyncStateCha
     await Promise.all(
         changes.tasks.updated.map( async update => {
             try {
-                await patchTask(googleTasksClient, update.newValue)
+                await patchTask(googleTasksClient, update)
                 let task = state.tasks.find( task => task.id === update.id)
-                if (task) task = update.newValue
+                if (task) task = update
             } catch (error) {
                 console.log("Error updating task", error)
             }
@@ -258,6 +258,7 @@ export async function runCycle() {
             console.log("Pushing changes to Google Tasks...")
             await pushChangesToGoogleTasks(googleTaskState, changesToGoogleTaskState)
             console.log("All operations have been completed. End of cycle.")
+            console.log("Current syncstate:", syncState)
         }
     } catch (error) {
         console.log("Error while syncing tasks!", error)
