@@ -24,11 +24,8 @@ export function compareStates (oldState: SyncState, newState: SyncState): SyncSt
         if (!oldTaskList) {
             changes.taskLists.added.push(newTaskList)
         } else {
-            if (oldTaskList !== newTaskList) {
-                changes.taskLists.updated.push({
-                  id: newTaskList.id,
-                  newValue: newTaskList,
-                })
+            if (hasChanged(newTaskList, oldTaskList)) {
+                changes.taskLists.updated.push(newTaskList)
             }
         }
     }
@@ -50,11 +47,8 @@ export function compareStates (oldState: SyncState, newState: SyncState): SyncSt
         if (!oldTask) {
           changes.tasks.added.push(newTask)
         } else {
-          if (oldTask !== newTask) {
-            changes.tasks.updated.push({
-              id: newTask.id,
-              newValue: newTask,
-            })
+          if (hasChanged(newTask, oldTask)) {
+            changes.tasks.updated.push(newTask)
           }
         }
       }
@@ -70,7 +64,6 @@ export function compareStates (oldState: SyncState, newState: SyncState): SyncSt
 }
 
 export function reconcileChanges (notionChanges: SyncStateChanges, googleTaskChanges: SyncStateChanges) : SyncStateChanges {
-
   const finalChanges: SyncStateChanges = {
     tasks: {
       added: [],
@@ -84,6 +77,18 @@ export function reconcileChanges (notionChanges: SyncStateChanges, googleTaskCha
     }
   }
 //In our system, google Tasks will always have priority
+  //Taskslists
+  googleTaskChanges.taskLists.updated.forEach( update =>
+    finalChanges.taskLists.updated.push(update)
+  )
+
+  googleTaskChanges.taskLists.deleted.forEach( deleteId =>
+    finalChanges.taskLists.deleted.push(deleteId)
+  )
+
+  googleTaskChanges.taskLists.added.forEach( newTaskList =>
+    finalChanges.taskLists.added.push(newTaskList)
+  )
   //Tasks
   googleTaskChanges.tasks.updated.forEach( update =>
     finalChanges.tasks.updated.push(update)
@@ -97,61 +102,58 @@ export function reconcileChanges (notionChanges: SyncStateChanges, googleTaskCha
     finalChanges.tasks.added.push(newTask)
   )
 
-  //Taskslists
-  googleTaskChanges.taskLists.updated.forEach( update =>
-    finalChanges.taskLists.updated.push(update)
-  )
-
-  googleTaskChanges.taskLists.deleted.forEach( deleteId =>
-    finalChanges.taskLists.deleted.push(deleteId)
-  )
-  
-  googleTaskChanges.taskLists.added.forEach( newTaskList =>
-    finalChanges.taskLists.added.push(newTaskList)
-  )
+  const googleAddedTaskListsMap = createTaskListMap(googleTaskChanges.taskLists.added)
+  const googleUpdatedTaskListsMap = createTaskListMap(googleTaskChanges.taskLists.updated)
+  const googleAddedTasksMap = createTaskMap(googleTaskChanges.tasks.added)
+  const googleUpdatedTasksMap = createTaskMap(googleTaskChanges.tasks.updated)
 
 //Notion changes are dispatched with more care
+  //Tasklists
+  notionChanges.taskLists.updated.forEach( update => {
+    //make sure the updated tasklist in Notion has neither been deleted nor updated in googleTasks
+    //otherwise, we dont push the change
+    if (!googleTaskChanges.taskLists.deleted.includes(update.id)
+      && !googleUpdatedTaskListsMap.has(update.id)) {
+      finalChanges.taskLists.updated.push(update)
+    }
+  })
+
+  notionChanges.taskLists.deleted.forEach( deleteId => {
+    //make sure deleted tasklist in Notion hasnt been updated nor deleted in GoogleTasks
+    if (!googleTaskChanges.taskLists.deleted.includes(deleteId)
+      && !googleUpdatedTaskListsMap.has(deleteId)) {
+        finalChanges.taskLists.deleted.push(deleteId)
+    }
+  })
+  
+  notionChanges.taskLists.added.forEach( newTaskList => {
+    //making sure we're not adding the exact same tasklist
+    if (!googleAddedTaskListsMap.has(newTaskList.id))
+    finalChanges.taskLists.added.push(newTaskList)
+  })
+
   //Tasks
   notionChanges.tasks.updated.forEach( update => {
-    //look inside the updated and deleted tasks IDs in the google tasks changes
-    //if the updated task is in neither of them, then we push the change
-    if (!googleTaskChanges.tasks.deleted.find( deleteId => deleteId === update.id)
-      && !googleTaskChanges.tasks.updated.find( gTaskUpdate => gTaskUpdate.id === update.id)) {
+    //make sure the updated task in Notion has neither been deleted nor updated in googleTasks
+    //otherwise, we dont push the change
+    if (!googleTaskChanges.tasks.deleted.includes(update.id)
+    && !googleUpdatedTasksMap.has(update.id)) {
       finalChanges.tasks.updated.push(update)
     }
   })
 
   notionChanges.tasks.deleted.forEach( deleteId => {
-    if (!googleTaskChanges.tasks.updated.find( update => update.id === deleteId)
-    && !googleTaskChanges.tasks.deleted.find( gTaskDeleteId => gTaskDeleteId === deleteId)) {
+    //make sure deleted task in Notion hasnt been updated nor deleted in GoogleTasks
+    if (!googleTaskChanges.tasks.deleted.includes(deleteId)
+      && !googleUpdatedTasksMap.has(deleteId)) {
       finalChanges.tasks.deleted.push(deleteId)
     }
   })
 
   notionChanges.tasks.added.forEach( newTask => {
       //making sure we're not adding the exact same task
-    if (!googleTaskChanges.tasks.added.find( task => newTask.id === task.id))
+    if (!googleAddedTasksMap.has(newTask.id))
     finalChanges.tasks.added.push(newTask)
-  })
-
-  //Tasklists
-  notionChanges.taskLists.updated.forEach( update => {
-    if (!googleTaskChanges.taskLists.deleted.find( deleteId => deleteId === update.id)
-      && !googleTaskChanges.taskLists.updated.find( gTaskUpdate => gTaskUpdate.id === update.id)) {
-      finalChanges.taskLists.updated.push(update)
-    }
-  })
-
-  notionChanges.taskLists.deleted.forEach( deleteId => {
-    if (!googleTaskChanges.taskLists.deleted.find( gTaskDeleteId => gTaskDeleteId === deleteId)
-      && !googleTaskChanges.taskLists.updated.find( gTaskUpdate => gTaskUpdate.id === deleteId)) {
-        finalChanges.taskLists.deleted.push(deleteId)
-    }
-  })
-  
-  notionChanges.taskLists.added.forEach( newTaskList => {
-    if (!googleTaskChanges.taskLists.added.find( list => newTaskList.id === list.id))
-    finalChanges.taskLists.added.push(newTaskList)
   })
 
   return finalChanges
@@ -159,12 +161,14 @@ export function reconcileChanges (notionChanges: SyncStateChanges, googleTaskCha
 
 export function applyChangesToState (stateToUpdate: SyncState, changes: SyncStateChanges) {
   //tasklists
+  const taskListMap = createTaskListMap(stateToUpdate.tasklists)
+
   changes.taskLists.added.forEach( addedList => stateToUpdate.tasklists.push(addedList))
 
   changes.taskLists.updated.forEach( update => {
-    let foundList = stateToUpdate.tasklists.find( list => list.id === update.id)
-    if (foundList) foundList = update.newValue
-    else stateToUpdate.tasklists.push(update.newValue)
+    let foundList = taskListMap.get(update.id)
+    if (foundList) foundList = update
+    else stateToUpdate.tasklists.push(update)
   })
 
   changes.taskLists.deleted.forEach ( idToDelete => {
@@ -172,12 +176,14 @@ export function applyChangesToState (stateToUpdate: SyncState, changes: SyncStat
   })
 
   //tasks
+  const taskMap = createTaskMap(stateToUpdate.tasks)
+
   changes.tasks.added.forEach( addedTask => stateToUpdate.tasks.push(addedTask))
 
   changes.tasks.updated.forEach( update => {
-    let foundTask = stateToUpdate.tasks.find( task => task.id === update.id)
-    if (foundTask) foundTask = update.newValue
-    else stateToUpdate.tasks.push(update.newValue)
+    let foundTask = taskMap.get(update.id)
+    if (foundTask) foundTask = update
+    else stateToUpdate.tasks.push(update)
   })
 
   changes.tasks.deleted.forEach ( idToDelete => {
@@ -199,4 +205,55 @@ function createTaskMap(tasks: Task[]): Map<string, Task> {
     map.set(task.id, task);
   }
   return map;
+}
+
+function hasChanged(current: Task | TaskList, old: Task | TaskList): boolean {
+  //this function determines whether a task or tasklist is considered to have changed
+  //checking if both parameters are of same type
+  if (isTask(current) && isTask(old)) {
+    return (
+      current.title !== old.title ||
+      current.status !== old.status ||
+      current.taskListId !== old.taskListId ||
+      hasDuePropertyChanged(current.due, old.due)
+    )
+  }
+  else if (!isTask(current) && !isTask(old)) {
+    return (
+      current.title !== old.title
+    )
+  }
+  else throw new Error('The two parameters being compared are not of the same type')
+}
+
+function isTask(target: Task | TaskList) : target is Task {
+  return (target as Task).status !== undefined
+}
+
+function parseDate(dateString: string): Date {
+  return new Date(dateString)
+}
+
+function areDatesEqual(date1: string, date2: string): boolean {
+  const d1 = parseDate(date1);
+  const d2 = parseDate(date2);
+
+  // Compare the year, month, and date (day)
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+}
+
+function hasDuePropertyChanged(due1: string|undefined, due2: string|undefined) : boolean {
+  return (
+    //The two due properties arent of the same type
+    ( typeof due1 !== typeof due2 ) ||
+    //Or they are both date strings but different dates (ignoring time)
+    (
+      typeof due1 === "string" && typeof due2 === "string"
+      && !areDatesEqual(due1, due2)
+    ) 
+  )
 }
