@@ -1,6 +1,6 @@
 import {SyncState, SyncStateChanges, Task, TaskList } from "../models/types.js"
 
-export function compareStates (oldState: SyncState, newState: SyncState): SyncStateChanges {
+function compareStates (oldState: SyncState, newState: SyncState): SyncStateChanges {
     const changes: SyncStateChanges = {
           tasks: {
             added: [],
@@ -63,7 +63,7 @@ export function compareStates (oldState: SyncState, newState: SyncState): SyncSt
     return changes
 }
 
-export function reconcileChanges (notionChanges: SyncStateChanges, googleTaskChanges: SyncStateChanges) : SyncStateChanges {
+function reconcileChanges (notionChanges: SyncStateChanges, googleTaskChanges: SyncStateChanges) : SyncStateChanges {
   const finalChanges: SyncStateChanges = {
     tasks: {
       added: [],
@@ -159,7 +159,7 @@ export function reconcileChanges (notionChanges: SyncStateChanges, googleTaskCha
   return finalChanges
 }
 
-export function applyChangesToState (stateToUpdate: SyncState, changes: SyncStateChanges) {
+function applyChangesToState (stateToUpdate: SyncState, changes: SyncStateChanges) {
   //tasklists
   const taskListMap = createTaskListMap(stateToUpdate.tasklists)
 
@@ -257,3 +257,5 @@ function hasDuePropertyChanged(due1: string|undefined, due2: string|undefined) :
     ) 
   )
 }
+
+export default {compareStates, reconcileChanges, applyChangesToState}

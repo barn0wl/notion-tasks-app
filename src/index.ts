@@ -2,7 +2,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
-import { runCycle } from './core/app.js';
+import syncApp from './core/app.js';
 
 dotenv.config();
 const app = express();
@@ -21,7 +21,7 @@ app.listen(PORT, () => {
 
 //Run cycle on GET requests at origin route
 app.get('/', (_req, res) => {
-  runCycle()
+  syncApp.runCycle()
   .then( () => res.send('Done syncing tasks!').status(200))
   .catch( (error) => res.send(`Error while syncing tasks: ${error}`).status(400))
 })

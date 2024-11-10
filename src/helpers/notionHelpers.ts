@@ -1,7 +1,7 @@
 import { CheckboxProperty, DateProperty, IPageObject, NotionData, RelationProperty, TextProperty, TitleProperty, URLProperty} from "../models/notionTypes.js"
 import { TaskList, Task, SyncState } from "../models/types.js"
 
-export function parseListToNotionPage(list: TaskList) : IPageObject {
+function parseListToNotionPage(list: TaskList) : IPageObject {
     return {
         properties: {
             Name: {
@@ -32,7 +32,7 @@ export function parseListToNotionPage(list: TaskList) : IPageObject {
     }
 }
 
-export function parseTaskToNotionPage(task: Task, notionListPageId: string) : IPageObject {
+function parseTaskToNotionPage(task: Task, notionListPageId: string) : IPageObject {
     return {
         properties: {
             Name: {
@@ -85,7 +85,7 @@ export function parseTaskToNotionPage(task: Task, notionListPageId: string) : IP
     }
 }
 
-export function parseNotionPageToList (page: IPageObject) : TaskList {
+function parseNotionPageToList (page: IPageObject) : TaskList {
     const nameProp = page.properties.Name as TitleProperty
     const listIDProp = page.properties.GTaskID as TextProperty
     const linkProp = page.properties["List URL"] as URLProperty
@@ -97,7 +97,7 @@ export function parseNotionPageToList (page: IPageObject) : TaskList {
     }
 }
 
-export function parseNotionPageToTask (page: IPageObject, projectsData: { pageId: string, list: TaskList }[] ) : Task {
+function parseNotionPageToTask (page: IPageObject, projectsData: { pageId: string, list: TaskList }[] ) : Task {
     const nameProp = page.properties.Name as TitleProperty
     const taskIDProp = page.properties.GTaskID as TextProperty
     const dueProp = page.properties.Due as DateProperty
@@ -125,7 +125,7 @@ export function parseNotionPageToTask (page: IPageObject, projectsData: { pageId
     }
 }
 
-export function parseNotionData (listPages: IPageObject[], taskPages: IPageObject[]) : NotionData {
+function parseNotionData (listPages: IPageObject[], taskPages: IPageObject[]) : NotionData {
     const data : NotionData = {
         tasks: [],
         projects:[]
@@ -155,7 +155,7 @@ export function parseNotionData (listPages: IPageObject[], taskPages: IPageObjec
     return data
 }
 
-export function parseNotionState (notionData: NotionData) : SyncState {
+function parseNotionState (notionData: NotionData) : SyncState {
     const state: SyncState = {
         tasks: [],
         tasklists: []
@@ -166,3 +166,5 @@ export function parseNotionState (notionData: NotionData) : SyncState {
 
     return state
 }
+
+export default {parseListToNotionPage, parseTaskToNotionPage, parseNotionData, parseNotionState}
